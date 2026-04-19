@@ -29,7 +29,7 @@ except (AttributeError, TypeError):
     client = mqtt.Client()
 client.connect(BROKER, PORT, 60)
 
-init_csv()
+# init_csv()
 sim = MotorSimulator()
 
 print("MQTT Motor Publisher Started")
@@ -77,5 +77,5 @@ while True:
     print(f"[{datetime.now().strftime('%H:%M:%S')}] "
           f"RPM:{rpm} | Vib:{vibration} | Amp:{current} | Temp:{temp} | {status}")
 
-    log_data(payload)
+    # log_data(payload)
     time.sleep(INTERVAL)
