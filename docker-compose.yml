@@ -1,0 +1,72 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: motor-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: motor-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  backend:
+    build:
+      context: ./backend
+    container_name: motor-backend
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - mosquitto
+    environment:
+      PORT: 8080
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB_NAME: motor_monitor
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_TOPIC: edge_ai/motor_efficiency
+      MODEL_PATH: /app/mlModel/motor_fault_model.onnx
+      FEATURE_COLUMNS_PATH: /app/mlModel/feature_columns.json
+      TELEMETRY_TTL_SECONDS: 2592000
+      ALERTS_TTL_SECONDS: 7776000
+      EVAL_WINDOW_SIZE: 120
+      EVAL_EMIT_EVERY: 20
+    volumes:
+      - ./mlModel:/app/mlModel:ro
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: motor-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+  sensor-publisher:
+    image: python:3.11-slim
+    container_name: motor-sensor-publisher
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir paho-mqtt && python sensors/mqtt_publisher.py"
+    environment:
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+      MQTT_TOPIC: edge_ai/motor_efficiency
+      PUBLISH_INTERVAL_SECONDS: 2
+    volumes:
+      - ./:/app
+
+volumes:
+  mongo_data:

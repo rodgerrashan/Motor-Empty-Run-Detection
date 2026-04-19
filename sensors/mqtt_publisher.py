@@ -1,5 +1,6 @@
 import time
 import json
+import os
 from datetime import datetime
 import paho.mqtt.client as mqtt
 
@@ -15,9 +16,10 @@ except ImportError:
 
 
 # CONFIG
-BROKER = "broker.hivemq.com"
-TOPIC = "edge_ai/motor_efficiency"
-INTERVAL = 2
+BROKER = os.getenv("MQTT_BROKER", "localhost")
+PORT = int(os.getenv("MQTT_PORT", "1883"))
+TOPIC = os.getenv("MQTT_TOPIC", "edge_ai/motor_efficiency")
+INTERVAL = float(os.getenv("PUBLISH_INTERVAL_SECONDS", "2"))
 
 # MQTT Setup
 try:
@@ -25,12 +27,13 @@ try:
 except (AttributeError, TypeError):
     # Backward compatibility with older paho-mqtt versions.
     client = mqtt.Client()
-client.connect(BROKER, 1883, 60)
+client.connect(BROKER, PORT, 60)
 
 init_csv()
 sim = MotorSimulator()
 
-print("🚀 MQTT Motor Publisher Started\n")
+print("MQTT Motor Publisher Started")
+print(f"Broker: {BROKER}:{PORT} | Topic: {TOPIC} | Interval: {INTERVAL}s\n")
 
 while True:
     data = sim.generate(INTERVAL)
