@@ -59,3 +59,9 @@ Optional env vars:
 - Runtime feature engineering in backend matches the notebook formulas.
 - ONNX model and feature column order are mounted from `mlModel/` into backend container.
 - Evaluation is proxy/drift-first (rolling confidence + class distribution window).
+
+## ESP32 prototype (DC motor)
+
+If you want a hardware demo using an ESP32 + a small DC motor (no real pump), see:
+
+- `docs/esp32-prototype.md`
