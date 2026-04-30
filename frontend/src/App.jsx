@@ -4,6 +4,8 @@ import ReactECharts from "echarts-for-react";
 const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws";
 
+// ============== FORMATTING UTILITIES ==============
+
 const formatTs = (ts) => {
   if (!ts) return "-";
   return new Date(ts).toLocaleTimeString();
@@ -24,6 +26,8 @@ const alertCodeLabel = (code) => {
   if (n == null || n <= 0) return "-";
   return `A-${String(Math.trunc(n)).padStart(2, "0")}`;
 };
+
+// ============== CHART OPTIONS ==============
 
 const gaugeOption = ({ name, value, min, max, warnAt, dangerAt, unit }) => {
   const safeValue = toNum(value) ?? min;
@@ -183,6 +187,8 @@ const classDistributionOption = (snapshot) => {
   };
 };
 
+// ============== COMPONENT: STATE BADGE ==============
+
 function StateBadge({ state }) {
   const key = String(state || "UNKNOWN").toUpperCase();
   const map = {
@@ -195,6 +201,240 @@ function StateBadge({ state }) {
   return <span className={`badge ${map[key] || "badge-off"}`}>{key}</span>;
 }
 
+// ============== INNOVATIVE FEATURE CARDS ==============
+
+function HealthScoreCard({ motorId }) {
+  const [score, setScore] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/health/score/${motorId}`);
+        const data = await res.json();
+        setScore(data);
+      } catch (e) {
+        console.error("Health score fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [motorId]);
+
+  const scoreColor = score?.score >= 70 ? "#86efac" : score?.score >= 50 ? "#fde68a" : "#fda4af";
+
+  return (
+    <article className="card">
+      <h2>Health Score</h2>
+      {loading ? (
+        <p style={{ color: "#94a3b8" }}>Loading...</p>
+      ) : score ? (
+        <>
+          <div style={{ fontSize: "32px", fontWeight: "bold", color: scoreColor, marginBottom: "8px" }}>
+            {fmtNum(score.score, 0)}/100
+          </div>
+          <p style={{ color: "#cbd5e1", margin: "4px 0" }}>Status: {score.status}</p>
+          <p style={{ color: "#94a3b8", fontSize: "12px", margin: "4px 0" }}>{score.reason || "Optimal"}</p>
+        </>
+      ) : (
+        <p style={{ color: "#94a3b8" }}>No data</p>
+      )}
+    </article>
+  );
+}
+
+function EnergyMetricsCard({ motorId }) {
+  const [energy, setEnergy] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/energy/metrics/${motorId}`);
+        const data = await res.json();
+        setEnergy(data);
+      } catch (e) {
+        console.error("Energy metrics fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [motorId]);
+
+  return (
+    <article className="card">
+      <h2>Energy Metrics</h2>
+      {loading ? (
+        <p style={{ color: "#94a3b8" }}>Loading...</p>
+      ) : energy ? (
+        <>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Energy: <span style={{ color: "#dbeafe", fontWeight: "bold" }}>{fmtNum(energy.energy_kwh, 2)} kWh</span>
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Cost: <span style={{ color: "#86efac", fontWeight: "bold" }}>${fmtNum(energy.cost_usd, 2)}</span>
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Efficiency: <span style={{ color: "#fde68a", fontWeight: "bold" }}>{fmtNum(energy.efficiency_score, 0)}%</span>
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Carbon: <span style={{ color: "#f87171", fontWeight: "bold" }}>{fmtNum(energy.carbon_kg, 2)} kg CO2</span>
+          </p>
+        </>
+      ) : (
+        <p style={{ color: "#94a3b8" }}>No data</p>
+      )}
+    </article>
+  );
+}
+
+function AnomalyDetectionCard({ motorId }) {
+  const [anomalies, setAnomalies] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/anomalies/detect/${motorId}`);
+        const data = await res.json();
+        setAnomalies(data);
+      } catch (e) {
+        console.error("Anomaly fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [motorId]);
+
+  return (
+    <article className="card">
+      <h2>Anomaly Detection</h2>
+      {loading ? (
+        <p style={{ color: "#94a3b8" }}>Loading...</p>
+      ) : anomalies ? (
+        <>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Found: <span style={{ color: "#dbeafe", fontWeight: "bold" }}>{anomalies.anomaly_count}</span>
+          </p>
+          {anomalies.anomalies && anomalies.anomalies.length > 0 && (
+            <>
+              <p style={{ margin: "6px 0 2px 0", fontSize: "11px", color: "#94a3b8" }}>Latest Detection:</p>
+              <p style={{ margin: "2px 0", fontSize: "11px" }}>
+                {anomalies.anomalies[0].feature}{" "}
+                <span style={{ color: anomalies.anomalies[0].severity === "HIGH" ? "#f87171" : "#fde68a" }}>
+                  ({anomalies.anomalies[0].severity})
+                </span>
+              </p>
+            </>
+          )}
+        </>
+      ) : (
+        <p style={{ color: "#94a3b8" }}>No data</p>
+      )}
+    </article>
+  );
+}
+
+function MaintenanceCard({ motorId }) {
+  const [maintenance, setMaintenance] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/maintenance/recommendations/${motorId}`);
+        const data = await res.json();
+        setMaintenance(data);
+      } catch (e) {
+        console.error("Maintenance fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [motorId]);
+
+  const riskColor = {
+    CRITICAL: "#f87171",
+    HIGH: "#fbbf24",
+    MEDIUM: "#fde68a",
+    LOW: "#86efac"
+  };
+
+  return (
+    <article className="card">
+      <h2>Predictive Maintenance</h2>
+      {loading ? (
+        <p style={{ color: "#94a3b8" }}>Loading...</p>
+      ) : maintenance ? (
+        <>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Risk:{" "}
+            <span style={{ color: riskColor[maintenance.risk_level] || "#dbeafe", fontWeight: "bold" }}>
+              {maintenance.risk_level}
+            </span>
+          </p>
+          {maintenance.recommendations && maintenance.recommendations.length > 0 && (
+            <>
+              <p style={{ margin: "6px 0 2px 0", fontSize: "11px", color: "#94a3b8" }}>Top Action:</p>
+              <p style={{ margin: "2px 0", fontSize: "11px", color: "#dbeafe" }}>
+                {maintenance.recommendations[0].action}
+              </p>
+            </>
+          )}
+        </>
+      ) : (
+        <p style={{ color: "#94a3b8" }}>No data</p>
+      )}
+    </article>
+  );
+}
+
+function AlertRulesCard({ motorId }) {
+  const [rules, setRules] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/rules/${motorId}`);
+        const data = await res.json();
+        setRules(data);
+      } catch (e) {
+        console.error("Rules fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [motorId]);
+
+  return (
+    <article className="card">
+      <h2>Alert Rules</h2>
+      {loading ? (
+        <p style={{ color: "#94a3b8" }}>Loading...</p>
+      ) : rules ? (
+        <>
+          <p style={{ margin: "4px 0", fontSize: "12px" }}>
+            Active: <span style={{ color: "#86efac", fontWeight: "bold" }}>{rules.total_rules || 0}</span>
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "11px", color: "#94a3b8" }}>
+            Custom monitoring rules configured
+          </p>
+        </>
+      ) : (
+        <p style={{ color: "#94a3b8" }}>No rules</p>
+      )}
+    </article>
+  );
+}
+
+// ============== MAIN APP COMPONENT ==============
+
 export default function App() {
   const [latest, setLatest] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -202,6 +442,7 @@ export default function App() {
   const [bootError, setBootError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [wsState, setWsState] = useState("connecting");
+  const motorId = "motor_1";
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -297,6 +538,7 @@ export default function App() {
       {bootError ? <p className="banner banner-error">{bootError}</p> : null}
       {isLoading ? <p className="banner">Loading initial snapshots...</p> : null}
 
+      {/* ========== ORIGINAL KPI SECTION ========== */}
       <section className="grid kpi-grid">
         <article className="card kpi-card">
           <h2>Current State</h2>
@@ -341,6 +583,16 @@ export default function App() {
         </article>
       </section>
 
+      {/* ========== INNOVATIVE FEATURES SECTION ========== */}
+      <section className="grid" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))", marginTop: "14px" }}>
+        <HealthScoreCard motorId={motorId} />
+        <EnergyMetricsCard motorId={motorId} />
+        <AnomalyDetectionCard motorId={motorId} />
+        <MaintenanceCard motorId={motorId} />
+        <AlertRulesCard motorId={motorId} />
+      </section>
+
+      {/* ========== ORIGINAL GAUGE SECTION ========== */}
       <section className="gauge-grid">
         <article className="card gauge-card">
           <h2>RPM Meter</h2>
@@ -423,6 +675,7 @@ export default function App() {
         </article>
       </section>
 
+      {/* ========== ORIGINAL OPS SECTION ========== */}
       <section className="ops-grid">
         <article className="card trends-card">
           <div className="card-head">
@@ -450,6 +703,7 @@ export default function App() {
         </article>
       </section>
 
+      {/* ========== ORIGINAL ALERTS SECTION ========== */}
       <section className="alerts-section">
         <article className="card alerts-card">
           <div className="card-head">
