@@ -2,7 +2,7 @@
 
 This document provides real-world examples and scenarios for using the enhanced monitoring system.
 
-## 📋 Table of Contents
+## Table of Contents
 1. [Quick Test Scenarios](#quick-test-scenarios)
 2. [Integration Examples](#integration-examples)
 3. [Real-World Use Cases](#real-world-use-cases)
@@ -183,7 +183,7 @@ class MotorWebSocketMonitor {
     this.ws = new WebSocket(this.wsUrl);
 
     this.ws.onopen = () => {
-      console.log("✅ Connected to monitoring service");
+      console.log(" Connected to monitoring service");
     };
 
     this.ws.onmessage = (event) => {
@@ -211,7 +211,7 @@ class MotorWebSocketMonitor {
     };
 
     this.ws.onerror = (error) => {
-      console.error("❌ WebSocket error:", error);
+      console.error(" WebSocket error:", error);
     };
 
     this.ws.onclose = () => {
@@ -226,10 +226,10 @@ class MotorWebSocketMonitor {
     
     // Custom logic
     if (temp > 80) {
-      console.warn(`⚠️  High temperature: ${temp}°C`);
+      console.warn(`  High temperature: ${temp}°C`);
     }
     if (vib > 100) {
-      console.warn(`⚠️  High vibration: ${vib} Hz`);
+      console.warn(`  High vibration: ${vib} Hz`);
     }
   }
 
@@ -242,12 +242,12 @@ class MotorWebSocketMonitor {
       message: data.message
     });
     
-    console.error(`🚨 ALERT [${data.severity}]: ${data.rule_name}`);
+    console.error(` ALERT [${data.severity}]: ${data.rule_name}`);
     console.error(`   ${data.message}`);
   }
 
   onPredictionAlert(data) {
-    console.error(`🔴 ANOMALY DETECTED: ${data.predicted_state}`);
+    console.error(` ANOMALY DETECTED: ${data.predicted_state}`);
     console.error(`   Confidence: ${(data.confidence * 100).toFixed(1)}%`);
   }
 
@@ -258,7 +258,7 @@ class MotorWebSocketMonitor {
 
   printAlertSummary() {
     const recent = this.getAlertsSince(60);
-    console.log(`\n📊 Alerts in Last Hour: ${recent.length}`);
+    console.log(`\n Alerts in Last Hour: ${recent.length}`);
     recent.forEach(alert => {
       console.log(`  - [${alert.severity}] ${alert.rule}`);
     });
@@ -427,11 +427,11 @@ async function checkSLACompliance() {
     }
   }
   
-  console.log(`\n✅ SLA COMPLIANCE REPORT`);
+  console.log(`\n SLA COMPLIANCE REPORT`);
   console.log(`${compliant}/${motors.length} motors compliant`);
   
   if (violations.length > 0) {
-    console.log(`\n❌ Violations:`);
+    console.log(`\n Violations:`);
     violations.forEach(v => {
       console.log(`\n${v.motor}:`);
       v.issues.forEach(issue => console.log(`  - ${issue}`));
@@ -551,11 +551,11 @@ with open(f"motor_report_{datetime.now().strftime('%Y%m%d')}.txt", "w") as f:
 ## Summary
 
 These examples cover:
-- ✅ Quick testing of all features
-- ✅ Integration with Python and JavaScript
-- ✅ Real-world use cases
-- ✅ Troubleshooting common issues
-- ✅ Automation scripts for daily tasks
+-  Quick testing of all features
+-  Integration with Python and JavaScript
+-  Real-world use cases
+-  Troubleshooting common issues
+-  Automation scripts for daily tasks
 
 For more information, see:
 - [INNOVATIONS.md](INNOVATIONS.md) - Feature descriptions
