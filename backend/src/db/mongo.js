@@ -34,6 +34,9 @@ export async function connectMongo() {
   );
   await db.collection("alerts").createIndex({ motor_id: 1, created_at: -1 });
 
+  await db.collection("alert_notifications").createIndex({ sent_at: -1 });
+  await db.collection("alert_notifications").createIndex({ motor_id: 1, condition_key: 1, sent_at: -1 });
+
   await db.collection("model_eval").createIndex({ created_at: -1 });
   await db.collection("model_registry").createIndex({ model_version: 1 }, { unique: true });
 

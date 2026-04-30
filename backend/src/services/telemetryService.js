@@ -2,6 +2,7 @@ import { getDb } from "../db/mongo.js";
 import { buildFeatureVector } from "../ml/featureEngineering.js";
 import { predict } from "../ml/onnxService.js";
 import { broadcast } from "../realtime/wsHub.js";
+import { maybeSendCriticalAlert } from "./criticalAlertService.js";
 import { registerPrediction } from "./evaluationService.js";
 
 function toDate(value) {
@@ -63,6 +64,8 @@ export async function processTelemetry(payload) {
     await db.collection("alerts").insertOne(alertDoc);
     broadcast("alert", alertDoc);
   }
+
+  await maybeSendCriticalAlert(db, telemetryDoc);
 
   const evalDoc = registerPrediction({
     predicted_state: telemetryDoc.predicted_state,

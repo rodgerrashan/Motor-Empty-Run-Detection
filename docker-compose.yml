@@ -37,6 +37,18 @@ services:
       ALERTS_TTL_SECONDS: 7776000
       EVAL_WINDOW_SIZE: 120
       EVAL_EMIT_EVERY: 20
+      ALERT_ADMIN_EMAIL: process.env.ALERT_ADMIN_EMAIL
+      ALERT_EMAIL_ENABLED: "true"
+      ALERT_EMAIL_THROTTLE_MINUTES: 30
+      CRITICAL_TEMPERATURE_C: 100
+      CRITICAL_VIBRATION_HZ: 80
+      CRITICAL_LOCKED_ROTOR_CURRENT_A: 22
+      CRITICAL_LOCKED_ROTOR_RPM: 200
+      SMTP_HOST: process.env.SMTP_HOST
+      SMTP_PORT: 587
+      SMTP_USER: process.env.SMTP_USER
+      SMTP_PASS: process.env.SMTP_PASS
+      ALERT_FROM_EMAIL: process.env.ALERT_FROM_EMAIL
     volumes:
       - ./mlModel:/app/mlModel:ro
     ports:
@@ -50,7 +62,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "1020:80"
+      - "5173:80"
 
   sensor-publisher:
     image: python:3.11-slim
