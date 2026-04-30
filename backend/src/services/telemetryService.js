@@ -3,6 +3,7 @@ import { buildFeatureVector } from "../ml/featureEngineering.js";
 import { predict } from "../ml/onnxService.js";
 import { broadcast } from "../realtime/wsHub.js";
 import { registerPrediction } from "./evaluationService.js";
+import { evaluateRules } from "./alertRulesEngine.js";
 
 function toDate(value) {
   const n = Number(value);
@@ -72,6 +73,12 @@ export async function processTelemetry(payload) {
   if (evalDoc) {
     await db.collection("model_eval").insertOne(evalDoc);
     broadcast("model_eval", evalDoc);
+  }
+
+  // Evaluate custom alert rules
+  const ruleAlerts = await evaluateRules(telemetryDoc.motor_id, telemetryDoc);
+  if (ruleAlerts.length > 0) {
+    ruleAlerts.forEach((alert) => broadcast("rule_alert", alert));
   }
 
   return telemetryDoc;
