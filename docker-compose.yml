@@ -50,7 +50,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "1020:80"
 
   sensor-publisher:
     image: python:3.11-slim

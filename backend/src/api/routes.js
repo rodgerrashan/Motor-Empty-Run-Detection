@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db/mongo.js";
+import { generateReport } from "../services/reportService.js";
 
 export const router = Router();
 
@@ -43,6 +44,19 @@ router.get("/api/eval/latest", async (_req, res, next) => {
     const db = getDb();
     const row = await db.collection("model_eval").find({}).sort({ created_at: -1 }).limit(1).next();
     res.json(row ?? {});
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/api/report/generate", async (req, res, next) => {
+  try {
+    const days = Math.min(Math.max(1, Number.parseInt(req.query.days ?? "1", 10)), 30);
+    const pdfBuffer = await generateReport(days);
+    const filename = `motor-report-${new Date().toISOString().split("T")[0]}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
   } catch (error) {
     next(error);
   }
