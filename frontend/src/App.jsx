@@ -202,6 +202,8 @@ export default function App() {
   const [bootError, setBootError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [wsState, setWsState] = useState("connecting");
+  const [reportGenerating, setReportGenerating] = useState(false);
+  const [csvGenerating, setCsvGenerating] = useState(false);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -279,6 +281,48 @@ export default function App() {
     };
   }, [alerts, current, wsState]);
 
+  const downloadReport = async (days = 1) => {
+    setReportGenerating(true);
+    try {
+      const res = await fetch(`${apiBase}/api/report/generate?days=${days}`);
+      if (!res.ok) throw new Error("Report generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `motor-report-${new Date().toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Failed to download report: ${error.message}`);
+    } finally {
+      setReportGenerating(false);
+    }
+  };
+
+  const downloadCSV = async (days = 1) => {
+    setCsvGenerating(true);
+    try {
+      const res = await fetch(`${apiBase}/api/export/csv?days=${days}`);
+      if (!res.ok) throw new Error("CSV export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `motor-telemetry-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Failed to download CSV: ${error.message}`);
+    } finally {
+      setCsvGenerating(false);
+    }
+  };
+
   return (
     <main className="page noc-shell">
       <header className="hero noc-hero">
@@ -291,6 +335,41 @@ export default function App() {
           <span className={`pill pill-${kpis.wsState}`}>WS: {String(kpis.wsState).toUpperCase()}</span>
           <span className="pill">Last Event: {formatTs(kpis.lastEvent)}</span>
           <span className={`pill ${healthStatus.className}`}>Model: {healthStatus.label}</span>
+          <button
+            onClick={() => downloadReport(1)}
+            disabled={reportGenerating || csvGenerating}
+            style={{
+              padding: "8px 14px",
+              background: "#0ea5e9",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: reportGenerating || csvGenerating ? "not-allowed" : "pointer",
+              fontSize: "12px",
+              fontWeight: "600",
+              opacity: reportGenerating ? 0.6 : 1,
+              marginRight: "6px"
+            }}
+          >
+            {reportGenerating ? "Generating..." : "📥 PDF Report"}
+          </button>
+          <button
+            onClick={() => downloadCSV(1)}
+            disabled={csvGenerating || reportGenerating}
+            style={{
+              padding: "8px 14px",
+              background: "#10b981",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: csvGenerating || reportGenerating ? "not-allowed" : "pointer",
+              fontSize: "12px",
+              fontWeight: "600",
+              opacity: csvGenerating ? 0.6 : 1
+            }}
+          >
+            {csvGenerating ? "Exporting..." : "📊 CSV Data"}
+          </button>
         </div>
       </header>
 
