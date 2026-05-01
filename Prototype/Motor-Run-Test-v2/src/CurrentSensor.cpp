@@ -9,6 +9,19 @@ void CurrentSensor::begin() {
   pinMode(adcPin_, INPUT);
 }
 
+void CurrentSensor::calibrateZero(uint16_t samples, uint16_t settleMs) {
+  delay(settleMs);
+
+  uint32_t total = 0;
+  for (uint16_t i = 0; i < samples; ++i) {
+    total += static_cast<uint32_t>(analogRead(adcPin_));
+    delayMicroseconds(200);
+  }
+
+  float avg = static_cast<float>(total) / static_cast<float>(samples);
+  zeroV_ = (avg / static_cast<float>(adcMax_)) * adcVref_;
+}
+
 float CurrentSensor::readCurrentA(uint16_t samples) {
   uint32_t total = 0;
   for (uint16_t i = 0; i < samples; ++i) {
