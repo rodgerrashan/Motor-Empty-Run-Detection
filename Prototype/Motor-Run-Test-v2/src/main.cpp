@@ -20,10 +20,8 @@ VoltageMeasure voltageMeasure(
   Config::VOLT_DIV_RATIO
 );
 
-RelayController relay(Config::PIN_RELAY_CTRL, true);
+RelayController relay(Config::PIN_RELAY_CTRL, false);
 
-bool isTripped = false;
-unsigned long emptyStartMs = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -35,25 +33,33 @@ void setup() {
   currentSensor.begin();
   voltageMeasure.begin();
   relay.begin();
-  relay.on();
+  relay.off();
+
+  Serial.println("Hold motor OFF for current zero calibration...");
+  currentSensor.calibrateZero(400, 1500);
+  Serial.println("Calibration done.");
+
+  // With COM+NC wiring: relay OFF = motor connected, relay ON = motor disconnected.
+  // Start with relay OFF (motor connected).
+  relay.off();
 }
 
 void loop() {
   float currentA = currentSensor.readCurrentA(Config::SAMPLE_COUNT);
   float motorV = voltageMeasure.readVoltageV(Config::SAMPLE_COUNT);
 
-  bool motorPowered = motorV >= Config::MOTOR_ON_VOLTAGE_MIN;
-  bool emptyRun = currentA <= Config::EMPTY_RUN_CURRENT_MAX;
-
-  if (!isTripped && motorPowered && emptyRun) {
-    if (emptyStartMs == 0) {
-      emptyStartMs = millis();
-    } else if (millis() - emptyStartMs >= Config::EMPTY_RUN_HOLD_MS) {
-      relay.off();
-      isTripped = true;
-    }
-  } else {
-    emptyStartMs = 0;
+  // With COM+NC wiring: energize relay to disconnect motor for 5s, then reconnect.
+  // Relay is active-low, so ON = write LOW, OFF = released/high (handled by RelayController).
+  if (!relay.isOn() && currentA > Config::CURRENT_ON_THRESHOLD) {
+    Serial.println("Over-current: disconnecting motor (relay ON) for 5 seconds...");
+    relay.on();
+    Serial.print("Relay GPIO level after ON = ");
+    Serial.println(digitalRead(Config::PIN_RELAY_CTRL));
+    delay(5000);
+    Serial.println("Reconnecting motor (relay OFF).");
+    relay.off();
+    Serial.print("Relay GPIO level after OFF = ");
+    Serial.println(digitalRead(Config::PIN_RELAY_CTRL));
   }
 
   Serial.print("V=");
@@ -62,8 +68,9 @@ void loop() {
   Serial.print(currentA, 2);
   Serial.print("A  Relay=");
   Serial.print(relay.isOn() ? "ON" : "OFF");
-  Serial.print("  Trip=");
-  Serial.println(isTripped ? "YES" : "NO");
+  Serial.print("  Threshold=");
+  Serial.print(Config::CURRENT_ON_THRESHOLD, 2);
+  Serial.println("A");
 
   delay(Config::LOOP_DELAY_MS);
 }

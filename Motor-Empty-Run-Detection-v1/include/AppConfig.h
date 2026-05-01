@@ -9,7 +9,13 @@ static constexpr const char* WIFI_SSID = "Senz Cloud";
 static constexpr const char *WIFI_PASSWORD = "GS20010423";
 
 // ---------------- MQTT ----------------
-// Set this to the LAN IP of the machine running Mosquitto (docker compose broker).
+// IMPORTANT: `mosquitto` is the Docker Compose service name; it resolves only *inside* the
+// Docker network (backend container, sensor-publisher container, etc.). Your ESP32 is on
+// Wi-Fi, so it must connect to the *LAN IP / hostname* of the machine running Mosquitto.
+// Example: "mqtt://192.168.1.10:1883"
+static constexpr const char* MQTT_URL = "mqtt://192.168.1.10:1883";
+
+// Backwards-compatible host/port (used if you call begin(host, port, ...)).
 static constexpr const char* MQTT_HOST = "192.168.1.10";
 static constexpr uint16_t MQTT_PORT = 1883;
 static constexpr const char* MQTT_TOPIC = "edge_ai/motor_efficiency";

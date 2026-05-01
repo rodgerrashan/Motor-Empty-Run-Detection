@@ -27,7 +27,7 @@ namespace Config {
   constexpr float LOAD_DROP_RATIO = 0.55f; // Trip if current < baseline * ratio
   constexpr float MIN_BASELINE_CURRENT = 0.30f; // A
   constexpr float BASELINE_ALPHA = 0.15f; // 0..1 (higher = faster adapt)
-  constexpr float CURRENT_ON_THRESHOLD = 1.20f; // A
+  constexpr float CURRENT_ON_THRESHOLD = 1.00f; // A
 
   // Sampling
   constexpr uint16_t SAMPLE_COUNT = 50;
