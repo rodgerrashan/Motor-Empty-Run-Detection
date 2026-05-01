@@ -2,6 +2,8 @@
 
 #include "AppConfig.h"
 
+#include "EdgeRandomForest.h"
+
 #include "net/WifiManager.h"
 #include "net/MqttPublisher.h"
 
@@ -40,8 +42,30 @@ static void updateMotorControl(bool emptyRun) {
   g_relay.setOn(g_motorOn);
 }
 
-static bool isEmptyRun(float rpm, float currentA) {
-  return (rpm >= AppConfig::EMPTY_RUN_RPM_MIN) && (currentA < AppConfig::EMPTY_RUN_CURRENT_A);
+static bool predictEmptyRunRf(
+    float rpm,
+    float vibrationHz,
+    float currentA,
+    float temperatureC,
+    float powerFactor,
+    float* confidenceOut) {
+  float features[EdgeRandomForest::kNumFeatures] = {0};
+  features[0] = rpm;
+  features[1] = vibrationHz;
+  features[2] = currentA;
+  features[3] = temperatureC;
+  features[4] = powerFactor;
+  features[5] = vibrationHz / (currentA + 0.1f);
+  features[6] = currentA / 15.5f;
+  features[7] = fabsf(vibrationHz - 60.2f);
+  features[8] = temperatureC - 48.0f;
+  features[9] = (currentA * 230.0f * powerFactor) / 1000.0f;
+  features[10] = (currentA > 22.0f && rpm < 200.0f) ? 1.0f : 0.0f;
+
+  float conf = 0.0f;
+  const uint8_t pred = EdgeRandomForest::predict(features, &conf);
+  if (confidenceOut) *confidenceOut = conf;
+  return pred == 1;
 }
 
 static void publishOnce() {
@@ -52,7 +76,14 @@ static void publishOnce() {
   const float vibHz = g_mpu.estimateVibrationHz(500, 200);
   const float tempC = g_mpu.read().temp_c;
 
-  const bool emptyRun = isEmptyRun(rpm, currentA);
+  float rfConfidence = 0.0f;
+  const bool emptyRun = predictEmptyRunRf(
+      rpm,
+      vibHz,
+      currentA,
+      tempC,
+      AppConfig::POWER_FACTOR_DC,
+      &rfConfidence);
   const int alertCode = emptyRun ? 1 : 0;
 
   updateMotorControl(emptyRun);
@@ -80,6 +111,12 @@ static void publishOnce() {
   const bool ok = g_mqtt.publish(AppConfig::MQTT_TOPIC, json);
   Serial.print(ok ? "Published: " : "Publish failed: ");
   Serial.println(json);
+
+  Serial.print("Edge RF prediction: ");
+  Serial.print(emptyRun ? "EMPTY_RUN" : "NORMAL");
+  Serial.print(" (confidence=");
+  Serial.print(rfConfidence, 3);
+  Serial.println(")");
 }
 
 void setup() {
@@ -105,7 +142,7 @@ void setup() {
   g_wifi.begin(AppConfig::WIFI_SSID, AppConfig::WIFI_PASSWORD);
   g_wifi.ensureConnected();
 
-  g_mqtt.begin(AppConfig::MQTT_HOST, AppConfig::MQTT_PORT, AppConfig::MQTT_CLIENT_ID);
+  g_mqtt.beginFromUrl(AppConfig::MQTT_URL, AppConfig::MQTT_CLIENT_ID);
   g_mqtt.ensureConnected();
 
   // Calibrate ACS offset (motor should be OFF for best results)
