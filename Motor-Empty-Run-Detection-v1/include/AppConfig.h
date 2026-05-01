@@ -5,8 +5,8 @@
 namespace AppConfig {
 
 // ---------------- Wi-Fi ----------------
-static constexpr const char* WIFI_SSID = "YOUR_WIFI_SSID";
-static constexpr const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+static constexpr const char* WIFI_SSID = "Senz Cloud";
+static constexpr const char *WIFI_PASSWORD = "GS20010423";
 
 // ---------------- MQTT ----------------
 // Set this to the LAN IP of the machine running Mosquitto (docker compose broker).
