@@ -3,6 +3,7 @@
 A production-ready AI/ML system for detecting motor idle runs, stalling, and operational faults using real-time telemetry analysis. Features ONNX-based inference, live dashboard, and complete Docker Compose stack.
 
 Final Report: docs/Group 12 Report.pdf
+https://drive.google.com/file/d/1aULY4XaL94dFwEaaw2Kw6XOlLYK4bE2R/view?usp=drive_link
 
 **Table of Contents**
 - [Overview](#overview)
